@@ -1,0 +1,57 @@
+name: Build ESP32 Firmware
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch: # इससे आप GitHub पर मैन्युअल रूप से भी रन कर सकते हैं
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 Platform
+        run: |
+          arduino-cli core update-index --additional-urls https://githubusercontent.com
+          arduino-cli core install esp32:esp32 --additional-urls https://githubusercontent.com
+
+      - name: Install Bluetooth Keyboard Library
+        run: |
+          # ब्लूटूथ कोड के लिए आवश्यक लाइब्रेरी डाउनलोड करना
+          mkdir -p "$HOME/Arduino/libraries"
+          git clone https://github.com "$HOME/Arduino/libraries/ESP32-BLE-Keyboard"
+
+      - name: Compile ESP32-S3 USB HID
+        run: |
+          # ESP32-S3 बोर्ड के लिए USB CDC सेटिंग्स के साथ कंपाइल करना
+          arduino-cli compile --fqbn esp32:esp32:esp32s3 \
+            --build-property "build.extra_flags=-DARDUINO_USB_CDC_ON_BOOT=1 -DARDUINO_USB_MODE=0" \
+            --output-dir ./build/s3 \
+            ./ESP32_S3_HID/ESP32_S3_HID.ino
+
+      - name: Compile Normal ESP32 Bluetooth HID
+        run: |
+          # नॉर्मल ESP32 (जैसे ESP32 WROOM) के लिए ब्लूटूथ कोड कंपाइल करना
+          arduino-cli compile --fqbn esp32:esp32:esp32 \
+            --output-dir ./build/ble \
+            ./ESP32_BLE_HID/ESP32_BLE_HID.ino
+
+      - name: Upload ESP32-S3 Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ESP32-S3-USB-Firmware
+          path: ./build/s3/*.bin
+
+      - name: Upload Normal ESP32 BLE Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ESP32-Normal-BLE-Firmware
+          path: ./build/ble/*.bin
