@@ -20,14 +20,17 @@ jobs:
 
       - name: Install ESP32 Platform
         run: |
-          # यूआरएल को पूरी तरह सुरक्षित रखने के लिए वेरिएबल में डाला गया है
-          ESP32_URL="https://githubusercontent.com"
+          # 1. arduino-cli का एक नया और फ्रेश कॉन्फ़िगरेशन जनरेट करें
+          arduino-cli config init --overwrite
           
-          # इंडेक्स अपडेट करना
-          arduino-cli core update-index --additional-urls "$ESP32_URL"
+          # 2. पुरानी सभी गलत यूआरएल सेटिंग्स को हटाकर बिल्कुल सही यूआरएल सेट करें
+          arduino-cli config set board_manager.additional_urls https://githubusercontent.com
           
-          # कोर इंस्टॉल करना
-          arduino-cli core install esp32:esp32 --additional-urls "$ESP32_URL"
+          # 3. अब फ्रेश इंडेक्स अपडेट करें
+          arduino-cli core update-index
+          
+          # 4. कोर इंस्टॉल करें
+          arduino-cli core install esp32:esp32
 
       - name: Install Bluetooth Keyboard Library
         run: |
