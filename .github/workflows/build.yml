@@ -20,22 +20,11 @@ jobs:
 
       - name: Install ESP32 Platform
         run: |
-          # 1. arduino-cli का एक नया और फ्रेश कॉन्फ़िगरेशन जनरेट करें
-          arduino-cli config init --overwrite
-          
-          # 2. पुरानी सभी गलत यूआरएल सेटिंग्स को हटाकर बिल्कुल सही यूआरएल सेट करें
-          arduino-cli config set board_manager.additional_urls https://githubusercontent.com
-          
-          # 3. अब फ्रेश इंडेक्स अपडेट करें
+          rm -rf /home/runner/.arduino15/arduino-cli.yaml
+          arduino-cli config init
+          arduino-cli config set board_manager.additional_urls "https://githubusercontent.com"
           arduino-cli core update-index
-          
-          # 4. कोर इंस्टॉल करें
           arduino-cli core install esp32:esp32
-
-      - name: Install Bluetooth Keyboard Library
-        run: |
-          mkdir -p "$HOME/Arduino/libraries"
-          git clone https://github.com "$HOME/Arduino/libraries/ESP32-BLE-Keyboard"
 
       - name: Compile ESP32-S3 USB HID
         run: |
@@ -44,20 +33,8 @@ jobs:
             --output-dir ./build/s3 \
             ./ESP32_S3_HID/ESP32_S3_HID.ino
 
-      - name: Compile Normal ESP32 Bluetooth HID
-        run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32 \
-            --output-dir ./build/ble \
-            ./ESP32_BLE_HID/ESP32_BLE_HID.ino
-
       - name: Upload ESP32-S3 Binary
         uses: actions/upload-artifact@v4
         with:
           name: ESP32-S3-USB-Firmware
           path: ./build/s3/*.bin
-
-      - name: Upload Normal ESP32 BLE Binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: ESP32-Normal-BLE-Firmware
-          path: ./build/ble/*.bin
