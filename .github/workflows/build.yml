@@ -1,4 +1,4 @@
-name: Build ESP32-S3 Firmware
+name: Build ESP-IDF Firmware
 
 on:
   push:
@@ -15,25 +15,21 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Arduino CLI
-        uses: arduino/setup-arduino-cli@v2
+      - name: Setup ESP-IDF
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.1.2
+          target: esp32
 
-      - name: Install ESP32 Core
+      - name: Build Firmware
         run: |
-          arduino-cli core update-index --additional-urls https://raw.githubusercontent.5com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-          arduino-cli core install esp32:esp32 --additional-urls https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-
-      - name: Install Required Libraries
-        run: |
-          arduino-cli lib install "USB" || true
-          arduino-cli lib install "USBHIDKeyboard" || true
-
-      - name: Compile Sketch for ESP32-S3
-        run: |
-          arduino-cli compile --fqbn esp32:esp32:esp32s3:CDCOnBoot=default,MSCDev=default,UploadSpeed=921600 ESP32_S3_HID.ino --output-dir ./build
+          idf.py build
 
       - name: Upload Binaries as Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ESP32-S3-Firmware
-          path: ./build/*.bin
+          name: ESP-IDF-Firmware
+          path: |
+            build/*.bin
+            build/bootloader/*.bin
+            build/partition_table/*.bin
